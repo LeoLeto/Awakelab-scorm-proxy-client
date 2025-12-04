@@ -1,8 +1,6 @@
-// src/lib/scormApi.ts
 import axios from "axios";
-import type { LicenseDetailsResponse, LicenseRow } from "../types";
+import type { LicenseRow } from "../types";
 
-// new base (use env)
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export async function fetchLicenseDetails(params?: {
@@ -10,7 +8,6 @@ export async function fetchLicenseDetails(params?: {
   date_to?: string;
   page?: number;
 }): Promise<LicenseRow[]> {
-  // call your backend proxy endpoint
   const url = `${API_BASE}/api/license-details`;
 
   const body = {

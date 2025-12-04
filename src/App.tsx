@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchLicenseDetails } from "./api/scormApi";
 import type { LicenseRow } from "./types";
 
@@ -6,15 +6,13 @@ export default function App() {
   const [licenses, setLicenses] = useState<LicenseRow[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    const rows = await fetchLicenseDetails();
-    setLicenses(rows);
-    setLoading(false);
-  }
-
   useEffect(() => {
-    load();
+    (async () => {
+      setLoading(true);
+      const rows = await fetchLicenseDetails();
+      setLicenses(rows);
+      setLoading(false);
+    })();
   }, []);
 
   return (
