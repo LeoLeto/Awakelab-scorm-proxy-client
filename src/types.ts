@@ -32,3 +32,10 @@ export type LicenseDetailsResponse = {
     };
   };
 };
+
+export type IngestReport = {
+  fetched: number;
+  upserted: number;
+  fromDate: string;
+  toDate: string;
+};

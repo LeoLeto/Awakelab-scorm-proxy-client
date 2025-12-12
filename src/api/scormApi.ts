@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { LicenseRow } from "../types";
+import type { LicenseRow, IngestReport } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
@@ -33,4 +33,13 @@ export async function fetchLicenseDetails(params?: {
   if (!res.data.ok)
     throw new Error(res.data.error ?? "failed to fetch licenses");
   return res.data.license ?? [];
+}
+
+export async function ingestLicenses(): Promise<IngestReport> {
+  const url = `${API_BASE}/ingest/licenses`;
+  const res = await axios.get<{ ok: boolean; report?: IngestReport; error?: string }>(url);
+  
+  if (!res.data.ok || !res.data.report)
+    throw new Error(res.data.error ?? "failed to ingest licenses");
+  return res.data.report;
 }
