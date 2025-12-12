@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchLicenseDetails, ingestLicenses } from "./api/scormApi";
 import type { LicenseRow, IngestReport } from "./types";
 import { SimpleTable } from "./components/SimpleTable";
+import * as XLSX from "xlsx";
 import "./App.css";
 
 // Get last month's date range
@@ -60,6 +61,37 @@ export default function App() {
     }
   };
 
+  const handleDownloadExcel = () => {
+    // Create worksheet from licenses data
+    const worksheet = XLSX.utils.json_to_sheet(licenses.map(license => ({
+      "Customer Ref": license.customer_ref || "",
+      "Customer Name": license.customer_name || "",
+      "User Username": license.user_username || "",
+      "User Fullname": license.user_fullname || "",
+      "Product Ref": license.product_ref || "",
+      "Product Title": license.product_title || "",
+      "Product Duration": license.product_duration || "",
+      "Product Price": license.product_price || "",
+      "License Details": license.license_details || "",
+      "License Start": license.license_start || "",
+      "License End": license.license_end || "",
+      "Tracking First Access": license.tracking_first_access || "",
+      "Tracking Last Access": license.tracking_last_access || "",
+      "Tracking Visits": license.tracking_visits || "",
+      "Tracking Elapsed Time": license.tracking_elapsed_time || "",
+    })));
+
+    // Create workbook and add worksheet
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Licenses");
+
+    // Generate filename with date range
+    const filename = `licenses_${dateFrom}_to_${dateTo}.xlsx`;
+
+    // Download the file
+    XLSX.writeFile(workbook, filename);
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -96,6 +128,13 @@ export default function App() {
           style={{ padding: "6px 16px", backgroundColor: "#4CAF50", color: "white", border: "none", borderRadius: "4px", cursor: ingesting ? "not-allowed" : "pointer" }}
         >
           {ingesting ? "Updating..." : "Update Database"}
+        </button>
+        <button 
+          onClick={handleDownloadExcel} 
+          disabled={loading || licenses.length === 0} 
+          style={{ padding: "6px 16px", backgroundColor: "#2196F3", color: "white", border: "none", borderRadius: "4px", cursor: (loading || licenses.length === 0) ? "not-allowed" : "pointer" }}
+        >
+          📥 Download Excel
         </button>
       </div>
 
