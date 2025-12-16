@@ -5,6 +5,8 @@ import { SimpleTable } from "./components/SimpleTable";
 import * as XLSX from "xlsx";
 import "./App.css";
 
+const APP_VERSION = "v1.3";
+
 // Get last 30 days date range
 const getLast30DaysRange = () => {
   const now = new Date();
@@ -53,6 +55,7 @@ export default function App() {
   const [dateFrom, setDateFrom] = useState(firstDay);
   const [dateTo, setDateTo] = useState(lastDayStr);
   const [selectedCustomer, setSelectedCustomer] = useState<string>("");
+  const [showReference, setShowReference] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -102,20 +105,20 @@ export default function App() {
     // Create worksheet from licenses data
     const worksheet = XLSX.utils.json_to_sheet(licenses.map(license => ({
       "Customer Ref": license.customer_ref || "",
-      "Customer Name": license.customer_name || "",
+      "Entidad_consumo": license.customer_name || "",
       "Customer URL": license.customer_url || "",
       "Customer URL 2": license.customer_url2 || "",
       "Customer URL 3": license.customer_url3 || "",
-      "User Username": license.user_username || "",
-      "User Fullname": license.user_fullname || "",
-      "Product Ref": license.product_ref || "",
-      "Product Title": license.product_title || "",
-      "Product Duration": license.product_duration || "",
-      "Product Price": license.product_price || "",
-      "License Start": formatDate(license.license_start),
-      "License End": formatDate(license.license_end),
-      "License Duration": calculateDuration(license.license_start, license.license_end),
-      "Tracking First Access": license.tracking_first_access || "",
+      "Nombre de usuario": license.user_username || "",
+      "Nombre completo con enlace": license.user_fullname || "",
+      "Codigo_Curso": license.product_ref || "",
+      "Nombre completo del curso con enlace": license.product_title || "",
+      "Horas": license.product_duration || "",
+      "Precio_Producto": license.product_price || "",
+      "F_inicio_licencia": formatDate(license.license_start),
+      "F_fin_licencia": formatDate(license.license_end),
+      "Duracion_licencia": calculateDuration(license.license_start, license.license_end),
+      "Primer acceso a Scorm": license.tracking_first_access || "",
     })));
 
     // Set column widths
@@ -167,9 +170,89 @@ export default function App() {
         color: "#888",
         fontFamily: "monospace"
       }}>
-        v1.2
+        {APP_VERSION}
+      </div>
+      <div style={{
+        position: "absolute",
+        top: "10px",
+        right: "70px",
+      }}>
+        <button
+          onClick={() => setShowReference(!showReference)}
+          style={{
+            padding: "4px 10px",
+            fontSize: "12px",
+            backgroundColor: "#f0f0f0",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            cursor: "pointer",
+            color: "#666"
+          }}
+        >
+          ℹ️ Column Reference
+        </button>
       </div>
       <h1 style={{ marginTop: "0" }}>License Details</h1>
+
+      {showReference && (
+        <div style={{
+          marginBottom: "20px",
+          padding: "16px",
+          backgroundColor: "#f9f9f9",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          fontSize: "13px",
+          maxWidth: "600px",
+          color: "#333"
+        }}>
+          <strong>Excel Column Reference:</strong>
+          <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "center" }}>
+            <span style={{ color: "#666" }}>User Username</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Nombre de usuario</span>
+            
+            <span style={{ color: "#666" }}>User Fullname</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Nombre completo con enlace</span>
+            
+            <span style={{ color: "#666" }}>Customer Name</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Entidad_consumo</span>
+            
+            <span style={{ color: "#666" }}>Product Ref</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Codigo_Curso</span>
+            
+            <span style={{ color: "#666" }}>Product Title</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Nombre completo del curso con enlace</span>
+            
+            <span style={{ color: "#666" }}>Product Duration</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Horas</span>
+            
+            <span style={{ color: "#666" }}>Product Price</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Precio_Producto</span>
+            
+            <span style={{ color: "#666" }}>License Start</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>F_inicio_licencia</span>
+            
+            <span style={{ color: "#666" }}>License End</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>F_fin_licencia</span>
+            
+            <span style={{ color: "#666" }}>License Duration</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Duracion_licencia</span>
+            
+            <span style={{ color: "#666" }}>Tracking First Access</span>
+            <span>→</span>
+            <span style={{ fontWeight: "500" }}>Primer acceso a Scorm</span>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginBottom: "20px", display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
         <label>
