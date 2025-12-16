@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { fetchLicenseDetails, ingestLicenses, fetchCustomers, fetchProducts } from "./api/scormApi";
+import { useEffect, useState, useMemo } from "react";
+import { fetchLicenseDetails, ingestLicenses, fetchCustomers } from "./api/scormApi";
 import type { LicenseRow, IngestReport } from "./types";
 import { SimpleTable } from "./components/SimpleTable";
 import * as XLSX from "xlsx";
 import "./App.css";
 
-const APP_VERSION = "v1.4";
+const APP_VERSION = "v1.5";
 
 // Get last 30 days date range
 const getLast30DaysRange = () => {
@@ -47,9 +47,8 @@ const calculateDuration = (startDate: string | null | undefined, endDate: string
 };
 
 export default function App() {
-  const [licenses, setLicenses] = useState<LicenseRow[]>([]);
+  const [allLicenses, setAllLicenses] = useState<LicenseRow[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
-  const [products, setProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [ingestReport, setIngestReport] = useState<IngestReport | null>(null);
@@ -67,9 +66,8 @@ export default function App() {
         date_to: dateTo,
         page: 1,
         customer_name: selectedCustomer || undefined,
-        product_title: selectedProduct || undefined,
       });
-      setLicenses(rows);
+      setAllLicenses(rows);
     } catch (error) {
       console.error("Error loading licenses:", error);
     } finally {
@@ -86,17 +84,22 @@ export default function App() {
     }
   };
 
-  const loadProducts = async (customerName: string) => {
-    try {
-      console.log("Loading products for customer:", customerName);
-      const productList = await fetchProducts(customerName);
-      console.log("Products loaded:", productList);
-      setProducts(productList);
-    } catch (error) {
-      console.error("Error loading products:", error);
-      setProducts([]);
-    }
-  };
+  // Derive available products from current licenses
+  const products = useMemo(() => {
+    const uniqueProducts = new Set<string>();
+    allLicenses.forEach(license => {
+      if (license.product_title) {
+        uniqueProducts.add(license.product_title);
+      }
+    });
+    return Array.from(uniqueProducts).sort();
+  }, [allLicenses]);
+
+  // Filter licenses by selected product
+  const licenses = useMemo(() => {
+    if (!selectedProduct) return allLicenses;
+    return allLicenses.filter(license => license.product_title === selectedProduct);
+  }, [allLicenses, selectedProduct]);
 
   const handleIngest = async () => {
     setIngesting(true);
@@ -172,19 +175,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (selectedCustomer) {
-      loadProducts(selectedCustomer);
-      setSelectedProduct(""); // Reset product when customer changes
-    } else {
-      setProducts([]);
-      setSelectedProduct("");
-    }
+    setSelectedProduct(""); // Reset product when customer changes
     loadData();
   }, [selectedCustomer]);
-
-  useEffect(() => {
-    loadData();
-  }, [selectedProduct]);
 
   return (
     <div style={{ padding: "20px", position: "relative" }}>
