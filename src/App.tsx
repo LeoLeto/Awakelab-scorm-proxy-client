@@ -66,6 +66,9 @@ export default function App() {
     const worksheet = XLSX.utils.json_to_sheet(licenses.map(license => ({
       "Customer Ref": license.customer_ref || "",
       "Customer Name": license.customer_name || "",
+      "Customer URL": license.customer_url || "",
+      "Customer URL 2": license.customer_url2 || "",
+      "Customer URL 3": license.customer_url3 || "",
       "User Username": license.user_username || "",
       "User Fullname": license.user_fullname || "",
       "Product Ref": license.product_ref || "",
@@ -85,6 +88,9 @@ export default function App() {
     worksheet['!cols'] = [
       { wch: 15 }, // Customer Ref
       { wch: 30 }, // Customer Name
+      { wch: 35 }, // Customer URL
+      { wch: 35 }, // Customer URL 2
+      { wch: 35 }, // Customer URL 3
       { wch: 20 }, // User Username
       { wch: 30 }, // User Fullname
       { wch: 15 }, // Product Ref
@@ -181,6 +187,9 @@ export default function App() {
         <SimpleTable
           columns={[
             { key: "customer_name", label: "Customer" },
+            { key: "customer_url", label: "URL" },
+            { key: "customer_url2", label: "URL 2" },
+            { key: "customer_url3", label: "URL 3" },
             { key: "user_fullname", label: "User" },
             { key: "product_title", label: "Product" },
             { key: "license_start", label: "License Start" },
