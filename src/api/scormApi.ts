@@ -3,6 +3,29 @@ import type { LicenseRow, IngestReport } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
+// Token management
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
+
+function getAuthHeaders() {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+  
+  return headers;
+}
+
 export async function fetchLicenseDetails(params?: {
   date_from?: string;
   date_to?: string;
@@ -25,11 +48,7 @@ export async function fetchLicenseDetails(params?: {
     license?: LicenseRow[];
     error?: string;
   }>(url, body, {
-    headers: {
-      "Content-Type": "application/json",
-      // optionally send an auth header if you protect the endpoint:
-      // Authorization: `Bearer ${import.meta.env.VITE_FRONTEND_API_KEY}`
-    },
+    headers: getAuthHeaders(),
   });
   
   console.log("🚀 ~ res: ", res)
@@ -41,7 +60,9 @@ export async function fetchLicenseDetails(params?: {
 
 export async function ingestLicenses(): Promise<IngestReport> {
   const url = `${API_BASE}/ingest/licenses`;
-  const res = await axios.get<{ ok: boolean; report?: IngestReport; error?: string }>(url);
+  const res = await axios.get<{ ok: boolean; report?: IngestReport; error?: string }>(url, {
+    headers: getAuthHeaders(),
+  });
   
   if (!res.data.ok || !res.data.report)
     throw new Error(res.data.error ?? "failed to ingest licenses");
@@ -50,7 +71,9 @@ export async function ingestLicenses(): Promise<IngestReport> {
 
 export async function fetchCustomers(): Promise<string[]> {
   const url = `${API_BASE}/api/customers`;
-  const res = await axios.get<{ ok: boolean; customers?: { customer_name: string }[]; error?: string }>(url);
+  const res = await axios.get<{ ok: boolean; customers?: { customer_name: string }[]; error?: string }>(url, {
+    headers: getAuthHeaders(),
+  });
   
   if (!res.data.ok || !res.data.customers)
     throw new Error(res.data.error ?? "failed to fetch customers");
@@ -59,7 +82,9 @@ export async function fetchCustomers(): Promise<string[]> {
 
 export async function fetchProducts(customerName: string): Promise<string[]> {
   const url = `${API_BASE}/api/products?customer_name=${encodeURIComponent(customerName)}`;
-  const res = await axios.get<{ ok: boolean; products?: { product_title: string }[]; error?: string }>(url);
+  const res = await axios.get<{ ok: boolean; products?: { product_title: string }[]; error?: string }>(url, {
+    headers: getAuthHeaders(),
+  });
   
   if (!res.data.ok || !res.data.products)
     throw new Error(res.data.error ?? "failed to fetch products");

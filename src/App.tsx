@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
-import { fetchLicenseDetails, ingestLicenses, fetchCustomers } from "./api/scormApi";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { fetchLicenseDetails, ingestLicenses, fetchCustomers, setAuthToken } from "./api/scormApi";
 import type { LicenseRow, IngestReport } from "./types";
 import { SimpleTable } from "./components/SimpleTable";
+import { Login } from "./components/Login";
 import * as XLSX from "xlsx";
 import "./App.css";
 
@@ -47,6 +48,8 @@ const calculateDuration = (startDate: string | null | undefined, endDate: string
 };
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string>("");
   const [allLicenses, setAllLicenses] = useState<LicenseRow[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,7 +61,7 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [showReference, setShowReference] = useState(false);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const rows = await fetchLicenseDetails({
@@ -73,16 +76,16 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateFrom, dateTo, selectedCustomer]);
 
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     try {
       const customerList = await fetchCustomers();
       setCustomers(customerList);
     } catch (error) {
       console.error("Error al cargar clientes:", error);
     }
-  };
+  }, []);
 
   // Derive available products from current licenses
   const products = useMemo(() => {
@@ -169,18 +172,56 @@ export default function App() {
     XLSX.writeFile(workbook, filename);
   };
 
+  // Check for stored token on mount
   useEffect(() => {
-    loadData();
-    loadCustomers();
+    const storedToken = localStorage.getItem("authToken");
+    const storedUser = localStorage.getItem("authUser");
+    
+    if (storedToken && storedUser) {
+      setAuthToken(storedToken);
+      setIsAuthenticated(true);
+      setCurrentUser(storedUser);
+    }
   }, []);
 
+  const handleLogin = (token: string, username: string) => {
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("authUser", username);
+    setAuthToken(token);
+    setIsAuthenticated(true);
+    setCurrentUser(username);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
+    setAuthToken(null);
+    setIsAuthenticated(false);
+    setCurrentUser("");
+  };
+
   useEffect(() => {
-    setSelectedProduct(""); // Reset product when customer changes
-    loadData();
-  }, [selectedCustomer]);
+    if (isAuthenticated) {
+      loadData();
+      loadCustomers();
+    }
+  }, [isAuthenticated, loadData, loadCustomers]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setSelectedProduct(""); // Reset product when customer changes
+      loadData();
+    }
+  }, [selectedCustomer, isAuthenticated, loadData]);
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
-    <div style={{ padding: "20px", position: "relative" }}>
+    <>
+      {/* User controls - absolute to viewport */}
       <div style={{ 
         position: "absolute", 
         top: "10px", 
@@ -195,7 +236,27 @@ export default function App() {
         position: "absolute",
         top: "10px",
         right: "70px",
+        display: "flex",
+        gap: "10px",
+        alignItems: "center"
       }}>
+        <span style={{ fontSize: "14px", color: "#666" }}>
+          Usuario: <strong>{currentUser}</strong>
+        </span>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: "4px 10px",
+            fontSize: "12px",
+            backgroundColor: "#f44336",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          Cerrar Sesión
+        </button>
         <button
           onClick={() => setShowReference(!showReference)}
           style={{
@@ -211,7 +272,10 @@ export default function App() {
           ℹ️ Referencia de Columnas
         </button>
       </div>
-      <h1 style={{ marginTop: "0" }}>Detalles de Licencias</h1>
+
+      {/* Main content */}
+      <div style={{ padding: "20px" }}>
+        <h1 style={{ marginTop: "0", marginBottom: "20px" }}>Detalles de Licencias</h1>
 
       {showReference && (
         <div style={{
@@ -222,7 +286,8 @@ export default function App() {
           borderRadius: "4px",
           fontSize: "13px",
           maxWidth: "600px",
-          color: "#333"
+          color: "#333",
+          marginInline: "auto"
         }}>
           <strong>Referencia de Columnas Excel:</strong>
           <div style={{ marginTop: "8px", display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "8px", alignItems: "center" }}>
@@ -396,6 +461,7 @@ export default function App() {
           rows={licenses}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
