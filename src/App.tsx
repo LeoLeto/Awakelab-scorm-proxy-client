@@ -6,7 +6,7 @@ import { Login } from "./components/Login";
 import * as XLSX from "xlsx";
 import "./App.css";
 
-const APP_VERSION = "v1.8";
+const APP_VERSION = "v1.9";
 
 // Get last 30 days date range
 const getLast30DaysRange = () => {
@@ -154,7 +154,7 @@ export default function App() {
         "F_inicio_licencia": formatDate(license.license_start),
         "F_fin_licencia": formatDate(license.license_end),
         "Duracion_licencia": calculateDuration(license.license_start, license.license_end),
-        "Primer acceso a Scorm": license.tracking_first_access || "",
+        "Primer acceso a Scorm": formatDate(license.tracking_first_access),
       })));
 
       // Set column widths
@@ -254,11 +254,11 @@ export default function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Only load customers list on authentication, not data
-      // User must click "Buscar" to load data with their chosen filters
+      // Load customers list and initial data with default filters (last 30 days)
       loadCustomers();
+      loadData();
     }
-  }, [isAuthenticated, loadCustomers]);
+  }, [isAuthenticated, loadCustomers, loadData]);
 
   useEffect(() => {
     if (isAuthenticated && selectedCustomer) {
@@ -529,6 +529,11 @@ export default function App() {
               key: "license_duration",
               label: "Duración de Licencia",
               render: (_, row) => calculateDuration(row.license_start, row.license_end)
+            },
+            { 
+              key: "tracking_first_access", 
+              label: "Primer Acceso",
+              render: (value) => formatDate(value)
             },
           ]}
           rows={licenses}
